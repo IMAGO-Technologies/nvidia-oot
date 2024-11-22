@@ -575,7 +575,15 @@ static void vi5_capture_dequeue(struct tegra_channel *chan,
 	/* Read SOF from capture descriptor */
 	ts = ns_to_timespec64((s64)descr->status.sof_timestamp);
 	trace_tegra_channel_capture_frame("sof", &ts);
+#if 0
 	vb->vb2_buf.timestamp = descr->status.sof_timestamp;
+#else
+	// Don't use TSC timestamp stored by RTCPU, it has an offset comparted to
+	// CLOCK_MONOTONIC => read CLOCK_MONOTONIC here
+	// We could also read the offset like described here:
+	// https://forums.developer.nvidia.com/t/how-to-get-the-clock-source-offset-ns-on-jetpack-6/300994
+	vb->vb2_buf.timestamp = ktime_get_ns();
+#endif
 
 	if (frame_err)
 		buf->vb2_state = VB2_BUF_STATE_ERROR;
