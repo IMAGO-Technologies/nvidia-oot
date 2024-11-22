@@ -555,33 +555,6 @@ int camera_common_enum_fmt(struct v4l2_subdev *sd, unsigned int index,
 }
 EXPORT_SYMBOL_GPL(camera_common_enum_fmt);
 
-static void select_mode(struct camera_common_data *s_data,
-			struct v4l2_mbus_framefmt *mf,
-			unsigned int mode_type)
-{
-	int i;
-	const struct camera_common_frmfmt *frmfmt = s_data->frmfmt;
-	bool flag = 0;
-
-	for (i = 0; i < s_data->numfmts; i++) {
-		if (mode_type & HDR_ENABLE)
-			flag = !frmfmt[i].hdr_en;
-		/* Add more flags for different controls as needed */
-
-		if (flag)
-			continue;
-
-		if (mf->width == frmfmt[i].size.width &&
-			mf->height == frmfmt[i].size.height) {
-			s_data->mode = frmfmt[i].mode;
-			s_data->mode_prop_idx = i;
-			break;
-		}
-	}
-
-	spec_bar();
-}
-
 int camera_common_try_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *mf)
 {
 	struct camera_common_data *s_data = to_camera_common_data(sd->dev);
@@ -590,7 +563,6 @@ int camera_common_try_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *mf)
 	const struct camera_common_frmfmt *frmfmt;
 	unsigned int mode_type = 0;
 	int err = 0;
-	int i;
 
 	dev_dbg(sd->dev, "%s: size %i x %i\n", __func__,
 		 mf->width, mf->height);
@@ -610,62 +582,12 @@ int camera_common_try_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *mf)
 
 	s_data->mode = s_data->def_mode;
 	s_data->mode_prop_idx = 0;
-	s_data->fmt_width = s_data->def_width;
-	s_data->fmt_height = s_data->def_height;
-
-	if (s_data->use_sensor_mode_id &&
-		s_data->sensor_mode_id >= 0 &&
-		s_data->sensor_mode_id < s_data->numfmts) {
-		dev_dbg(sd->dev, "%s: use_sensor_mode_id %d\n",
-				__func__, s_data->use_sensor_mode_id);
-		s_data->mode = frmfmt[s_data->sensor_mode_id].mode;
-		s_data->mode_prop_idx = s_data->sensor_mode_id;
-		if (mf->width == frmfmt[s_data->sensor_mode_id].size.width &&
-		    mf->height == frmfmt[s_data->sensor_mode_id].size.height) {
-			s_data->fmt_width = mf->width;
-			s_data->fmt_height = mf->height;
-		}
-		else
-		{
-			mf->width = s_data->fmt_width;
-			mf->height = s_data->fmt_height;
-			dev_dbg(sd->dev,
-				"%s: invalid resolution %d x %d\n",
-				__func__, mf->width, mf->height);
-			goto verify_code;
-		}
-	} else {
-		/* select mode based on format match first */
-		for (i = 0; i < s_data->numfmts; i++) {
-			if (mf->width == frmfmt[i].size.width &&
-				mf->height == frmfmt[i].size.height) {
-				s_data->mode = frmfmt[i].mode;
-				s_data->mode_prop_idx = i;
-				s_data->fmt_width = mf->width;
-				s_data->fmt_height = mf->height;
-				break;
-			}
-		}
-
-		spec_bar();
-
-		if (i == s_data->numfmts) {
-			mf->width = s_data->fmt_width;
-			mf->height = s_data->fmt_height;
-			dev_dbg(sd->dev,
-				"%s: invalid resolution supplied to set mode %d %d\n",
-				__func__, mf->width, mf->height);
-			goto verify_code;
-		}
-		/* update mode based on special mode types */
-		if (mode_type)
-			select_mode(s_data, mf, mode_type);
-	}
+	s_data->fmt_width = mf->width;
+	s_data->fmt_height = mf->height;
 
 	if (!camera_common_verify_code(chan, mf->code))
 		err = -EINVAL;
 
-verify_code:
 	mf->field = V4L2_FIELD_NONE;
 	mf->colorspace = V4L2_COLORSPACE_SRGB;
 	mf->xfer_func = V4L2_XFER_FUNC_DEFAULT;
