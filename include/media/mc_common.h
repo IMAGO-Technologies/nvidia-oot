@@ -47,7 +47,7 @@
 #define MAX_SYNCPT_PER_CHANNEL	3
 
 #define CAPTURE_MIN_BUFFERS	1U
-#define CAPTURE_MAX_BUFFERS	240U
+#define CAPTURE_MAX_BUFFERS	32U
 
 #define TEGRA_MEM_FORMAT 0
 #define TEGRA_ISP_FORMAT 1
@@ -183,8 +183,8 @@ struct tegra_channel {
 	unsigned int syncpt[TEGRA_CSI_BLOCKS][MAX_SYNCPT_PER_CHANNEL];
 	unsigned int syncpoint_fifo[TEGRA_CSI_BLOCKS][MAX_SYNCPT_PER_CHANNEL];
 	unsigned int buffer_offset[TEGRA_CSI_BLOCKS];
-	unsigned int *buffer_state;
-	struct vb2_v4l2_buffer **buffers;
+	unsigned int buffer_state[CAPTURE_MAX_BUFFERS];
+	struct vb2_v4l2_buffer *buffers[CAPTURE_MAX_BUFFERS];
 	unsigned long timeout;
 	atomic_t restart_version;
 	int capture_version;
@@ -400,9 +400,6 @@ struct tegra_channel_buffer *dequeue_buffer(struct tegra_channel *chan,
 	bool requeue);
 struct tegra_channel_buffer *dequeue_dequeue_buffer(struct tegra_channel *chan);
 int tegra_channel_error_recover(struct tegra_channel *chan, bool queue_error);
-int tegra_channel_alloc_buffer_queue(struct tegra_channel *chan,
-					unsigned int num_buffers);
-void tegra_channel_dealloc_buffer_queue(struct tegra_channel *chan);
 void tegra_channel_init_ring_buffer(struct tegra_channel *chan);
 void free_ring_buffers(struct tegra_channel *chan, int frames);
 void release_buffer(struct tegra_channel *chan,

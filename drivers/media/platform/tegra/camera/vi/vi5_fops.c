@@ -287,18 +287,9 @@ static int vi5_channel_open(struct tegra_channel *chan, u32 vi_port)
 static int vi5_channel_setup_queue(struct tegra_channel *chan,
 	unsigned int *nbuffers)
 {
-	int ret = 0;
-
 	*nbuffers = clamp(*nbuffers, CAPTURE_MIN_BUFFERS, CAPTURE_MAX_BUFFERS);
 
-	ret = tegra_channel_alloc_buffer_queue(chan, *nbuffers);
-	if (ret < 0)
-		goto done;
-
-	chan->capture_reqs_enqueued = 0;
-
-done:
-	return ret;
+	return 0;
 }
 
 static struct tegra_csi_channel *find_linked_csi_channel(
@@ -332,6 +323,8 @@ static int tegra_channel_capture_setup(struct tegra_channel *chan, unsigned int 
 	long err;
 
 	setup.queue_depth = chan->capture_queue_depth;
+
+	dev_dbg(chan->vi->dev, "tegra_channel_capture_setup(): setup.queue_depth = %u\n", setup.queue_depth);
 
 	trace_tegra_channel_capture_setup(chan, 0);
 
@@ -481,6 +474,7 @@ static void vi5_capture_enqueue(struct tegra_channel *chan,
 			goto uncorr_err;
 		}
 
+		dev_dbg(vi->dev, "%s: state: %u\n", __func__, chan->capture_state);
 		spin_lock_irqsave(&chan->capture_state_lock, flags);
 		if (chan->capture_state != CAPTURE_ERROR) {
 			chan->capture_state = CAPTURE_GOOD;
@@ -574,6 +568,7 @@ static void vi5_capture_dequeue(struct tegra_channel *chan,
 			chan->capture_state = CAPTURE_GOOD;
 		}
 		spin_unlock_irqrestore(&chan->capture_state_lock, flags);
+		dev_dbg(vi->dev, "%s: state = %u, capture_reqs_enqueued = %u\n", __func__, chan->capture_state, chan->capture_reqs_enqueued);
 	}
 
 	wake_up_interruptible(&chan->start_wait);
@@ -940,7 +935,6 @@ static int vi5_channel_start_streaming(struct vb2_queue *vq, u32 count)
 				goto err_setup;
 		}
 		chan->sequence = 0;
-		tegra_channel_init_ring_buffer(chan);
 
 		ret = vi5_channel_start_kthreads(chan);
 		if (ret != 0)
@@ -1063,6 +1057,8 @@ static int vi5_power_on(struct tegra_channel *chan)
 	struct device *dev;
 	struct tegra_mc_vi *vi;
 	struct tegra_csi_device *csi;
+
+	tegra_channel_init_ring_buffer(chan);
 
 	vi = chan->vi;
 	csi = vi->csi;

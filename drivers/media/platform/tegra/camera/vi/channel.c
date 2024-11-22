@@ -463,6 +463,10 @@ EXPORT_SYMBOL(dequeue_inflight);
 
 void tegra_channel_init_ring_buffer(struct tegra_channel *chan)
 {
+	dev_dbg(chan->vi->dev, "%s\n", __func__);
+
+	chan->capture_queue_depth = CAPTURE_MAX_BUFFERS;
+	chan->capture_reqs_enqueued = 0;
 	chan->released_bufs = 0;
 	chan->num_buffers = 0;
 	chan->save_index = 0;
@@ -719,46 +723,6 @@ tegra_channel_queue_setup(struct vb2_queue *vq,
 	if (vi->fops && vi->fops->vi_setup_queue)
 		return vi->fops->vi_setup_queue(chan, nbuffers);
 	return ret;
-}
-
-int tegra_channel_alloc_buffer_queue(struct tegra_channel *chan,
-	unsigned int num_buffers)
-{
-	struct device *vi_unit_dev = tegra_channel_get_vi_unit(chan);
-
-	chan->buffer_state = devm_kzalloc(vi_unit_dev,
-		(num_buffers * sizeof(*chan->buffer_state)), GFP_KERNEL);
-	if (!chan->buffer_state)
-		goto alloc_error;
-
-	chan->buffers = devm_kzalloc(vi_unit_dev,
-		(num_buffers * sizeof(*chan->buffers)), GFP_KERNEL);
-	if (!chan->buffers)
-		goto alloc_error;
-
-	chan->capture_queue_depth = num_buffers;
-
-	return 0;
-
-alloc_error:
-	dev_err(chan->vi->dev,
-		"error: could not allocate memory for %u size buffer queue\n",
-		num_buffers);
-
-	tegra_channel_dealloc_buffer_queue(chan);
-
-	return -ENOMEM;
-}
-EXPORT_SYMBOL(tegra_channel_alloc_buffer_queue);
-
-void tegra_channel_dealloc_buffer_queue(struct tegra_channel *chan)
-{
-	struct device *vi_unit_dev = tegra_channel_get_vi_unit(chan);
-
-	if (chan->buffer_state)
-		devm_kfree(vi_unit_dev, chan->buffer_state);
-	if (chan->buffers)
-		devm_kfree(vi_unit_dev, chan->buffers);
 }
 
 static int tegra_channel_buffer_prepare(struct vb2_buffer *vb)
@@ -2679,6 +2643,8 @@ int tegra_channel_init(struct tegra_channel *chan)
 
 	chan->init_done = true;
 
+	dev_dbg(chan->vi->dev, "%s: init_done\n", __func__);
+
 	return 0;
 
 deskew_ctx_err:
@@ -2714,8 +2680,6 @@ int tegra_channel_cleanup(struct tegra_channel *chan)
 			chan->emb_buf_addr, chan->emb_buf);
 		chan->emb_buf_size = 0;
 	}
-
-	tegra_channel_dealloc_buffer_queue(chan);
 
 	v4l2_ctrl_handler_free(&chan->ctrl_handler);
 	mutex_lock(&chan->video_lock);
