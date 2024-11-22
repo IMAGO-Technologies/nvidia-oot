@@ -13,7 +13,7 @@
 /* Minimum and maximum width and height common to Tegra video input device. */
 #define TEGRA_MIN_WIDTH		32U
 #define TEGRA_MAX_WIDTH		32768U
-#define TEGRA_MIN_HEIGHT	32U
+#define TEGRA_MIN_HEIGHT	1U
 #define TEGRA_MAX_HEIGHT	32768U
 /* Width alignment */
 #define TEGRA_WIDTH_ALIGNMENT	1
