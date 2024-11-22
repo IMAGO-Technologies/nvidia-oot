@@ -138,6 +138,8 @@ static int sensor_common_parse_signal_props(
 		/* Data rate */
 		signal->mipi_clock.val = rate;
 	}
+	
+	dev_dbg(dev, "%s: MIPI clock rate: %llu\n", __func__, signal->mipi_clock.val);
 
 	err = read_property_u32(node, "cil_settletime", &value);
 	if (err)
@@ -229,6 +231,8 @@ static int extract_pixel_format(
 
 	if (strncmp(pixel_t, "bayer_bggr10", size) == 0)
 		*format = V4L2_PIX_FMT_SBGGR10;
+	else if (strncmp(pixel_t, "bayer_rggb8", size) == 0)
+		*format = V4L2_PIX_FMT_SRGGB8;
 	else if (strncmp(pixel_t, "bayer_rggb10", size) == 0)
 		*format = V4L2_PIX_FMT_SRGGB10;
 	else if (strncmp(pixel_t, "bayer_grbg10", size) == 0)
