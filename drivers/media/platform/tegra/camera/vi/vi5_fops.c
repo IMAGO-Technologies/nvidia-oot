@@ -814,6 +814,11 @@ static int vi5_channel_start_kthreads(struct tegra_channel *chan)
 		goto done;
 	}
 
+	// sched_set_fifo() sets priority to MAX_RT_PRIO / 2, other values must be
+	// configured in user space.
+	sched_set_fifo(chan->kthread_capture_start);
+	sched_set_fifo(chan->kthread_capture_dequeue);
+
 done:
 	return err;
 }
