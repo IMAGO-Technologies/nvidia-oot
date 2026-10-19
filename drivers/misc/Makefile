@@ -15,7 +15,7 @@ obj-m += explore/cec/
 endif
 endif
 obj-m += nvsciipc/
-ifdef CONFIG_PCI
+ifdef CONFIG_PCI_ENDPOINT
 obj-m += tegra-pcie-dma-test.o
 endif
 obj-m += bluedroid_pm.o
