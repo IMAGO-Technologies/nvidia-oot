@@ -20,7 +20,4 @@ tegra-pcie-dma-lib-objs:= tegra-pcie-dma.o \
 			  tegra234-pcie-edma.o \
 			  tegra264-pcie-xdma.o
 endif
-else
-obj-m += pcie-tegra264.o
-pcie-tegra264-objs := pcie-tegra-soc-dummy.o
 endif
