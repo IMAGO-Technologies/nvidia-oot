@@ -2185,6 +2185,7 @@ __tegra_channel_try_format(struct tegra_channel *chan,
 
 	fmt.which = V4L2_SUBDEV_FORMAT_TRY;
 	fmt.pad = 0;
+	fmt.stream = 0;
 	v4l2_fill_mbus_format(&fmt.format, pix, vfmt->code);
 
 	ret = v4l2_subdev_call(sd, pad, set_fmt, &cfg, &fmt);
@@ -2234,6 +2235,7 @@ __tegra_channel_set_format(struct tegra_channel *chan,
 
 	fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
 	fmt.pad = 0;
+	fmt.stream = 0;
 	v4l2_fill_mbus_format(&fmt.format, pix, vfmt->code);
 
 	ret = v4l2_subdev_call(sd, pad, set_fmt, &cfg, &fmt);
